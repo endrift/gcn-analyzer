@@ -38,11 +38,56 @@ void GCNAnalyzer::WorkerThread()
 		Frame frame;
 		frame.mStartingSampleInclusive = mData->GetSampleNumber();
 		U8 byte = SampleByte();
-		if (byte == 0x00) {
+		switch (byte) {
+		case 0:
 			frame.mData1 = 0;
 			frame.mType = TYPE_POLL;
-		}
-		if (byte == 0x40) {
+			break;
+		case 0x14:
+			frame.mType = TYPE_QUERY;
+			frame.mData1 = byte;
+			frame.mEndingSampleInclusive = mData->GetSampleNumber();
+			ReadStopBit();
+			mResults->AddFrame( frame );
+
+			mData->AdvanceToNextEdge();
+			frame.mType = TYPE_DATA;
+			frame.mStartingSampleInclusive = mData->GetSampleNumber();
+			frame.mData1 = SampleByte();
+			frame.mData1 <<= 8;
+			frame.mData1 |= SampleByte();
+			frame.mData1 <<= 8;
+			frame.mData1 |= SampleByte();
+			frame.mData1 <<= 8;
+			frame.mData1 |= SampleByte();
+			frame.mData1 <<= 8;
+			frame.mData1 |= SampleByte();
+			break;
+		case 0x15:
+			frame.mType = TYPE_QUERY;
+			frame.mData1 = byte;
+			frame.mEndingSampleInclusive = mData->GetSampleNumber();
+			mResults->AddFrame( frame );
+
+			frame.mType = TYPE_DATA;
+			frame.mStartingSampleInclusive = mData->GetSampleNumber();
+			frame.mData1 = SampleByte();
+			frame.mData1 <<= 8;
+			frame.mData1 |= SampleByte();
+			frame.mData1 <<= 8;
+			frame.mData1 |= SampleByte();
+			frame.mData1 <<= 8;
+			frame.mData1 |= SampleByte();
+			frame.mEndingSampleInclusive = mData->GetSampleNumber();
+			ReadStopBit();
+			mResults->AddFrame( frame );
+
+			mData->AdvanceToNextEdge();
+			frame.mType = TYPE_DATA;
+			frame.mStartingSampleInclusive = mData->GetSampleNumber();
+			frame.mData1 = SampleByte();
+			break;
+		case 0x40:
 			frame.mType = TYPE_QUERY;
 			frame.mData1 = byte << 16;
 			frame.mData1 |= SampleByte() << 8;
@@ -69,6 +114,23 @@ void GCNAnalyzer::WorkerThread()
 			frame.mData1 |= SampleByte();
 			frame.mData1 <<= 8;
 			frame.mData1 |= SampleByte();
+			break;
+		case 0xFF:
+			frame.mType = TYPE_QUERY;
+			frame.mData1 = byte;
+			frame.mEndingSampleInclusive = mData->GetSampleNumber();
+			ReadStopBit();
+			mResults->AddFrame( frame );
+
+			mData->AdvanceToNextEdge();
+			frame.mType = TYPE_DATA;
+			frame.mStartingSampleInclusive = mData->GetSampleNumber();
+			frame.mData1 = SampleByte();
+			frame.mData1 <<= 8;
+			frame.mData1 |= SampleByte();
+			frame.mData1 <<= 8;
+			frame.mData1 |= SampleByte();
+			break;
 		}
 		frame.mEndingSampleInclusive = mData->GetSampleNumber();
 		ReadStopBit();
